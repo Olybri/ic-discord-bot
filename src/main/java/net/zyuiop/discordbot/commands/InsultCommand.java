@@ -25,17 +25,9 @@ public class InsultCommand extends DiscordCommand {
 	public InsultCommand() throws Exception {
 		super("insult", "génère une insulte aléatoire");
 
-		String filename = "rsrc/noms.txt";
+		String filename = "insult/noms.txt";
 
-		File file = new File(filename);
-		if (!file.exists()) {
-			Helpers.extractFile("/rsrc/noms.txt", file);
-			if (!file.exists()) {
-				System.out.println("Error: could not open file *" + filename + "*.");
-				return;
-			}
-		}
-
+		File file = new File(getClass().getClassLoader().getResource(filename).getFile());
 		Scanner fileStream = new Scanner(file);
 
 		while (fileStream.hasNextLine()) { nouns.add(fileStream.nextLine()); }
