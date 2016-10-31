@@ -1,5 +1,9 @@
 package net.zyuiop.discordbot.commands;
 
+import net.zyuiop.discordbot.DiscordBot;
+import net.zyuiop.discordbot.Helpers;
+import sx.blah.discord.handle.obj.IMessage;
+
 import java.io.File;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -7,9 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
-import net.zyuiop.discordbot.DiscordBot;
-import net.zyuiop.discordbot.Helpers;
-import sx.blah.discord.handle.obj.IMessage;
 
 // Created by Loris Witschard on 28.10.16.
 
@@ -44,64 +45,56 @@ public class InsultCommand extends DiscordCommand {
 
 	@Override
 	public void run(IMessage message) throws Exception {
-		String[] args = message.getContent().split(" ");
+		String answer = exec(message.getContent().toLowerCase().split("[\\s]+"));
+		DiscordBot.sendMessage(message.getChannel(), answer);
+	}
 
-		if (args.length == 1) {
-			DiscordBot.sendMessage(message.getChannel(), generateInsult());
-		} else {
-			boolean error = false;
+	public String exec(String[] args) {
+		final String userRegex = "<@[\\d]+>";
 
-			switch (args[1]) {
-				case "count":
-					if (args.length != 2) {
-						error = true;
-						break;
-					}
-					DiscordBot.sendMessage(message.getChannel(), "Il y a " +
-							NumberFormat.getNumberInstance(Locale.FRENCH).format(
-									intro.size() * nouns.size() * (nouns.size() - 1)) +
-							" combinaisons d'insultes possibles (sans les villes).");
+		if (args.length == 1)
+			return generateInsult();
+
+		switch (args[1]) {
+			case "count":
+				if (args.length != 2)
 					break;
 
-				case "city":
-					if (args.length != 2) {
-						error = true;
-						break;
-					}
-					String insult = generateInsult();
-					insult = insult.substring(0, insult.length() - 1);
+				return "Il y a " +
+						NumberFormat.getNumberInstance(Locale.FRENCH).format(
+							intro.size() * nouns.size() * (nouns.size() - 1)) +
+						" combinaisons d'insultes possibles (sans les villes).";
 
-					DiscordBot.sendMessage(message.getChannel(),
-							insult + "à " + CityCommand.generateCityName() + " !");
+			case "city":
+				if (args.length != 2 && args.length != 4)
+					break;
+				if (args.length == 4 && (!args[2].equals("to") || !args[3].matches(userRegex)))
 					break;
 
-				case "to":
-					if (args.length != 3 || !args[2].matches("<@[\\d]*>")) {
-						error = true;
-						break;
-					}
-					DiscordBot.sendMessage(message.getChannel(), args[2] + " " + generateInsult());
+				return (args.length == 4 ? args[3] + " " : "") + generateCityInsult();
+
+			case "to":
+				if (args.length != 3 && args.length != 4)
+					break;
+				if(args.length == 4 && (!args[3].equals("city")))
+					break;
+				if(!args[2].matches(userRegex))
 					break;
 
-				case "help":
-					DiscordBot.sendMessage(message.getChannel(),
-							"*Générateur d'insulte*\n" +
-									"*par Loris Witschard*\n\n" +
-									"**Utilisation** :\n" +
-									"`!insult` : génère une insulte\n" +
-									"`!insult to @user` : insulte l'utilisateur *@user*\n" +
-									"`!insult city` : insulte dans une ville aléatoire\n" +
-									"`!insult count` : affiche le nombre d'insultes possibles\n" +
-									"`!insult help` : affiche l'aide");
-					break;
+				return args[2] + " " + (args.length == 4 ? generateCityInsult() : generateInsult());
 
-				default:
-					error = true;
-					break;
-			}
-
-			if (error) { DiscordBot.sendMessage(message.getChannel(), "*Erreur de syntaxe.*"); }
+			case "help":
+				return	"*Générateur d'insulte aléatoire v1.0.2*\n" +
+						"*par Loris Witschard*\n\n" +
+						"**Utilisation** :\n" +
+						"`!insult` : génère une insulte\n" +
+						"`!insult to @user` : insulte l'utilisateur *@user*\n" +
+						"`!insult city` : insulte dans une ville aléatoire\n" +
+						"`!insult count` : affiche le nombre d'insultes possibles\n" +
+						"`!insult help` : affiche l'aide";
 		}
+
+		return "*Erreur de syntaxe.*";
 	}
 
 	private String generateInsult() {
@@ -116,5 +109,11 @@ public class InsultCommand extends DiscordCommand {
 		insult += (Helpers.isVowel(w2.charAt(0)) ? " d'" : " de ") + w2 + " !";
 
 		return insult;
+	}
+
+	private String generateCityInsult() {
+		String insult = generateInsult();
+		insult = insult.substring(0, insult.length() - 1);
+		return insult + "à " + CityCommand.generateCityName() + " !";
 	}
 }
